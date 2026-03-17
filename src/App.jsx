@@ -61,7 +61,52 @@ const ADMIN_USERS = {
 };
 
 // =========================================================================
-// COMPONENTE: TOUCH SELECT (MENU SUSPENSO COM VIBRAÇÃO E DESTAQUE)
+// VALIDADOR E FORMATADOR DE CNPJ (NOVO)
+// =========================================================================
+const formatCNPJ = (value) => {
+    return value
+        .replace(/\D/g, '') 
+        .replace(/^(\d{2})(\d)/, '$1.$2')
+        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2')
+        .slice(0, 18);
+};
+
+const isValidCNPJ = (cnpj) => {
+    cnpj = cnpj.replace(/[^\d]+/g,'');
+    if(cnpj === '') return false;
+    if (cnpj.length !== 14) return false;
+    if (/^(\d)\1+$/.test(cnpj)) return false; // Ex: 00000000000000
+
+    let tamanho = cnpj.length - 2
+    let numeros = cnpj.substring(0,tamanho);
+    let digitos = cnpj.substring(tamanho);
+    let soma = 0;
+    let pos = tamanho - 7;
+    for (let i = tamanho; i >= 1; i--) {
+      soma += numeros.charAt(tamanho - i) * pos--;
+      if (pos < 2) pos = 9;
+    }
+    let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado != digitos.charAt(0)) return false;
+
+    tamanho = tamanho + 1;
+    numeros = cnpj.substring(0,tamanho);
+    soma = 0;
+    pos = tamanho - 7;
+    for (let i = tamanho; i >= 1; i--) {
+      soma += numeros.charAt(tamanho - i) * pos--;
+      if (pos < 2) pos = 9;
+    }
+    resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado != digitos.charAt(1)) return false;
+    
+    return true;
+};
+
+// =========================================================================
+// COMPONENTE: TOUCH SELECT
 // =========================================================================
 const TouchSelect = ({ name, value, onChange, options, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -160,7 +205,7 @@ const TouchSelect = ({ name, value, onChange, options, placeholder }) => {
 };
 
 // =========================================================================
-// COMPONENTE: SWIPEABLE ENTRY (ARRASTAR PARA EDITAR/EXCLUIR)
+// COMPONENTE: SWIPEABLE ENTRY 
 // =========================================================================
 const SwipeableEntry = ({ entry, onEdit, onDelete, currentAdmin, adminGeneralFilter }) => {
     const [startX, setStartX] = useState(0);
@@ -220,7 +265,7 @@ const SwipeableEntry = ({ entry, onEdit, onDelete, currentAdmin, adminGeneralFil
                             <span className="text-[8px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded uppercase font-bold">{entry.team}</span>
                         )}
                     </div>
-                    <p className="font-bold text-slate-800 text-sm truncate">{entry.doctorName} <span className="text-slate-400 font-normal ml-1">({entry.category})</span></p>
+                    <p className="font-bold text-slate-800 text-sm truncate">{entry.pdvName} <span className="text-slate-400 font-normal ml-1">({entry.category})</span></p>
                     <p className="text-xs font-semibold text-slate-600 mt-1">R$ {entry.value} - <span className="font-normal text-slate-500">{entry.actionType}</span></p>
                     {entry.observations && <p className="text-[10px] text-slate-400 italic mt-1 truncate">Det: {entry.observations}</p>}
                 </div>
@@ -230,7 +275,7 @@ const SwipeableEntry = ({ entry, onEdit, onDelete, currentAdmin, adminGeneralFil
 };
 
 // =========================================================================
-// APLICATIVO PRINCIPAL (APP)
+// APLICATIVO PRINCIPAL
 // =========================================================================
 export default function App() {
     const [user, setUser] = useState(null);
@@ -248,7 +293,6 @@ export default function App() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [editingEntry, setEditingEntry] = useState(null); 
 
-    // ÍCONE DINÂMICO PWA (IPHONE)
     useEffect(() => {
         try {
             const canvas = document.createElement('canvas');
@@ -298,7 +342,8 @@ export default function App() {
             t = localStorage.getItem('pf_user_team') || '';
             r = localStorage.getItem('pf_user_name') || '';
         } catch(e) {}
-        return { team: t, requesterName: r, doctorName: '', crm: '', category: '', actionType: '', value: '', observations: '' };
+        // Alterado de doctorName e crm para pdvName e cnpj
+        return { team: t, requesterName: r, pdvName: '', cnpj: '', category: '', actionType: '', value: '', observations: '' };
     });
 
     useEffect(() => {
@@ -313,7 +358,6 @@ export default function App() {
         setTimeout(() => setStatus({ type: '', msg: '' }), 4000);
     }, []);
 
-    // FIREBASE INIT
     useEffect(() => {
         signInAnonymously(auth).catch(() => notify("Erro de ligação", "error"));
         return onAuthStateChanged(auth, setUser);
@@ -418,11 +462,12 @@ export default function App() {
             const dataToExport = currentAdmin ? filteredEntriesAdmin : feedEntries;
             if (dataToExport.length === 0) return notify("Não existem dados para exportar.", "error");
 
-            const headers = ["Data", "Estrutura", "Solicitante", "Medico/Destinatario", "CRM", "Bandeira", "Acao", "Valor", "Observacoes"];
+            // Atualizados Cabeçalhos no Relatório
+            const headers = ["Data", "Estrutura", "Solicitante", "PDV/Destinatario", "CNPJ", "Bandeira", "Acao", "Valor", "Observacoes"];
             const rows = dataToExport.map(e => {
                 const date = formatDate(e.createdAt);
                 const obs = String(e.observations || "").replace(/"/g, '""').replace(/\n/g, ' '); 
-                return [`"${date}"`,`"${e.team || ''}"`,`"${e.requesterName || ''}"`,`"${e.doctorName || ''}"`,`"${e.crm || ''}"`,`"${e.category || ''}"`,`"${e.actionType || ''}"`,`"${e.value || ''}"`,`"${obs}"`].join(";");
+                return [`"${date}"`,`"${e.team || ''}"`,`"${e.requesterName || ''}"`,`"${e.pdvName || ''}"`,`"${e.cnpj || ''}"`,`"${e.category || ''}"`,`"${e.actionType || ''}"`,`"${e.value || ''}"`,`"${obs}"`].join(";");
             });
 
             const csvString = [headers.join(";"), ...rows].join("\n");
@@ -465,21 +510,22 @@ export default function App() {
         } catch(e) { return []; }
     }, [feedEntries, parseCurrency]);
 
-    const feedStatsByDoctor = useMemo(() => {
+    // Atualizado para agrupar por CNPJ e mostrar Top PDVs
+    const feedStatsByPdv = useMemo(() => {
         try {
             const groups = feedEntries.reduce((acc, curr) => {
-                const crmKey = String(curr.crm || "").trim().toUpperCase();
-                const groupKey = crmKey || String(curr.doctorName || "DESCONHECIDO").trim().toUpperCase();
+                const cnpjKey = String(curr.cnpj || "").trim().toUpperCase();
+                const groupKey = cnpjKey || String(curr.pdvName || "DESCONHECIDO").trim().toUpperCase();
                 if (!acc[groupKey]) {
                     acc[groupKey] = { 
-                        total: 0, count: 0, doctorName: String(curr.doctorName || "DESCONHECIDO"), 
-                        category: String(curr.category || "-"), crm: crmKey || "-", 
+                        total: 0, count: 0, pdvName: String(curr.pdvName || "DESCONHECIDO"), 
+                        category: String(curr.category || "-"), cnpj: cnpjKey || "-", 
                         createdAt: (curr.createdAt && typeof curr.createdAt.getTime === 'function') ? curr.createdAt.getTime() : 0
                     };
                 } else {
                     const currTime = (curr.createdAt && typeof curr.createdAt.getTime === 'function') ? curr.createdAt.getTime() : 0;
                     if (currTime < acc[groupKey].createdAt) {
-                        acc[groupKey].doctorName = String(curr.doctorName || "DESCONHECIDO");
+                        acc[groupKey].pdvName = String(curr.pdvName || "DESCONHECIDO");
                         acc[groupKey].category = String(curr.category || "-");
                         acc[groupKey].createdAt = currTime;
                     }
@@ -517,6 +563,8 @@ export default function App() {
             setFormData(prev => ({ ...prev, team: value, requesterName: '' }));
         } else if (name === 'value') {
             setFormData(prev => ({ ...prev, [name]: formatValueInput(value) }));
+        } else if (name === 'cnpj') {
+            setFormData(prev => ({ ...prev, [name]: formatCNPJ(value) })); // Aplica a Máscara CNPJ
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
@@ -528,6 +576,8 @@ export default function App() {
             setEditingEntry(prev => ({ ...prev, team: value, requesterName: '' }));
         } else if (name === 'value') {
             setEditingEntry(prev => ({ ...prev, [name]: formatValueInput(value) }));
+        } else if (name === 'cnpj') {
+            setEditingEntry(prev => ({ ...prev, [name]: formatCNPJ(value) })); // Aplica a Máscara CNPJ na Edição
         } else {
             setEditingEntry(prev => ({ ...prev, [name]: value }));
         }
@@ -537,13 +587,19 @@ export default function App() {
         e.preventDefault();
         if (!user) return alert("Aguarde a ligação ao servidor");
         
-        const { team, requesterName, doctorName, value, observations, crm, category, actionType } = formData;
-        if (!team || !requesterName || !doctorName || !value || !crm || !category || !actionType) {
+        const { team, requesterName, pdvName, value, observations, cnpj, category, actionType } = formData;
+        if (!team || !requesterName || !pdvName || !value || !cnpj || !category || !actionType) {
             return alert("Preencha todos os campos obrigatórios.");
         }
+        
+        // NOVO: BLOQUEIO DE CNPJ INVÁLIDO ANTES DE GRAVAR
+        if (!isValidCNPJ(cnpj)) {
+            return alert("O CNPJ digitado é inválido. Por favor, verifique.");
+        }
+
         try {
             await addDoc(collection(db, COLLECTION_NAME), { ...formData, userId: user.uid, createdAt: new Date() });
-            setFormData({ ...formData, doctorName: '', crm: '', value: '', observations: '', category: '', actionType: '' }); 
+            setFormData({ ...formData, pdvName: '', cnpj: '', value: '', observations: '', category: '', actionType: '' }); 
             
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 30]); 
             setShowSuccessPopup(true);
@@ -554,13 +610,19 @@ export default function App() {
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
-        const { team, requesterName, doctorName, value, crm, category, actionType } = editingEntry;
-        if (!team || !requesterName || !doctorName || !value || !crm || !category || !actionType) {
+        const { team, requesterName, pdvName, value, cnpj, category, actionType } = editingEntry;
+        if (!team || !requesterName || !pdvName || !value || !cnpj || !category || !actionType) {
             return notify("Preencha todos os campos obrigatórios.", "error");
         }
+
+        // NOVO: BLOQUEIO DE CNPJ INVÁLIDO NA EDIÇÃO
+        if (!isValidCNPJ(cnpj)) {
+            return notify("O CNPJ digitado é inválido.", "error");
+        }
+
         try {
             await updateDoc(doc(db, COLLECTION_NAME, editingEntry.id), {
-                team, requesterName, doctorName, value, crm, category, actionType, observations: editingEntry.observations || ''
+                team, requesterName, pdvName, value, cnpj, category, actionType, observations: editingEntry.observations || ''
             });
             setEditingEntry(null);
             if (navigator.vibrate) navigator.vibrate([30, 50, 30]); 
@@ -635,7 +697,7 @@ export default function App() {
                     <div className="relative bg-white w-full max-sm:rounded-3xl rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 border border-slate-100 text-center">
                         <div className="text-5xl mb-4">⚠️</div>
                         <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Confirmar Exclusão?</h3>
-                        <p className="text-sm text-slate-500 my-4 px-2 italic">Excluir lançamento de <strong className="text-slate-800">{deleteTarget.doctorName}</strong>?</p>
+                        <p className="text-sm text-slate-500 my-4 px-2 italic">Excluir lançamento de <strong className="text-slate-800">{deleteTarget.pdvName}</strong>?</p>
                         <div className="space-y-3">
                             <button onClick={confirmDelete} className="w-full bg-rose-600 text-white font-black py-4 rounded-2xl active:scale-95 transition-all shadow-lg uppercase text-sm tracking-widest">Sim, Apagar</button>
                             <button onClick={() => setDeleteTarget(null)} className="w-full bg-slate-100 text-slate-500 font-bold py-4 rounded-2xl active:scale-95 transition-all uppercase text-sm">Cancelar</button>
@@ -670,10 +732,11 @@ export default function App() {
                                 )}
                             </div>
 
-                            <input name="doctorName" value={editingEntry.doctorName} onChange={handleEditChange} placeholder="NOME DO MÉDICO / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
+                            {/* MUDANÇA AQUI: PDV E CNPJ NA EDIÇÃO */}
+                            <input name="pdvName" value={editingEntry.pdvName} onChange={handleEditChange} placeholder="NOME DO PDV / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
                             <div className="grid grid-cols-2 gap-4">
-                                <input name="crm" value={editingEntry.crm} onChange={handleEditChange} placeholder="UF-CRM" maxLength={7} className="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 transition-all placeholder:text-slate-400" />
+                                <input name="cnpj" value={editingEntry.cnpj} onChange={handleEditChange} placeholder="CNPJ" maxLength={18} className="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 transition-all placeholder:text-slate-400" />
                                 <input name="value" value={editingEntry.value} onChange={handleEditChange} placeholder="R$ 0,00" className="p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl font-black text-emerald-800 text-sm outline-none focus:border-emerald-500 transition-all text-center placeholder:text-emerald-400" />
                             </div>
 
@@ -742,26 +805,27 @@ export default function App() {
                                 )}
                             </div>
 
-                            <input value={formData.doctorName} onChange={e => setFormData({...formData, doctorName: e.target.value})} placeholder="NOME DO MÉDICO / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
+                            {/* MUDANÇA AQUI: PDV E CNPJ */}
+                            <input name="pdvName" value={formData.pdvName} onChange={handleInputChange} placeholder="NOME DO PDV / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <input 
-                                    value={formData.crm} 
-                                    onChange={e => setFormData({...formData, crm: e.target.value})} 
-                                    placeholder="UF-CRM" 
-                                    maxLength={7}
+                                    name="cnpj"
+                                    value={formData.cnpj} 
+                                    onChange={handleInputChange} 
+                                    placeholder="CNPJ" 
+                                    maxLength={18} // Limite da máscara do CNPJ
                                     className="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 transition-all placeholder:text-slate-400" 
                                 />
-                                <input value={formData.value} onChange={e => setFormData({...formData, value: formatValueInput(e.target.value)})} placeholder="R$ 0,00" className="p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl font-black text-emerald-800 text-sm outline-none focus:border-emerald-500 transition-all text-center placeholder:text-emerald-400" />
+                                <input name="value" value={formData.value} onChange={handleInputChange} placeholder="R$ 0,00" className="p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl font-black text-emerald-800 text-sm outline-none focus:border-emerald-500 transition-all text-center placeholder:text-emerald-400" />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                {/* Aqui o formulário chama a nova lista BANDEIRA em vez da antiga CATEGORIES */}
                                 <TouchSelect name="category" value={formData.category} onChange={handleInputChange} options={BANDEIRA} placeholder="BANDEIRA..." />
                                 <TouchSelect name="actionType" value={formData.actionType} onChange={handleInputChange} options={ACTION_TYPES} placeholder="AÇÃO..." />
                             </div>
 
-                            <textarea value={formData.observations} onChange={e => setFormData({...formData, observations: e.target.value})} placeholder="DETALHE A AÇÃO AQUI..." rows="3" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
+                            <textarea name="observations" value={formData.observations} onChange={handleInputChange} placeholder="DETALHE A AÇÃO AQUI..." rows="3" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
                             <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-2xl active:scale-[0.96] transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-widest mt-4">
                                 Registrar solicitação
@@ -851,16 +915,17 @@ export default function App() {
                                     </div>
                                 )}
 
-                                {feedStatsByDoctor.length > 0 && (
+                                {/* MUDANÇA AQUI: Mostrar Top PDVs por CNPJ */}
+                                {feedStatsByPdv.length > 0 && (
                                     <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                                        <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-3 border-l-2 border-indigo-500 pl-2">Top Médicos (Por CRM)</h3>
+                                        <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-3 border-l-2 border-indigo-500 pl-2">Top PDVs (Por CNPJ)</h3>
                                         <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                                            {feedStatsByDoctor.map((s, i) => (
+                                            {feedStatsByPdv.map((s, i) => (
                                                 <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 pb-2 last:border-0">
                                                     <div className="flex flex-col min-w-0 pr-2">
-                                                        <span className="font-bold text-slate-700 truncate uppercase">{i+1}. {s.doctorName}</span>
+                                                        <span className="font-bold text-slate-700 truncate uppercase">{i+1}. {s.pdvName}</span>
                                                         <div className="flex items-center gap-1.5 mt-0.5">
-                                                            <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold">{s.crm}</span>
+                                                            <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold">{s.cnpj}</span>
                                                             <span className="text-[9px] font-black uppercase text-indigo-500">{s.category}</span>
                                                         </div>
                                                     </div>
@@ -892,7 +957,7 @@ export default function App() {
                                 <div key={e.id} className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex justify-between items-start active:scale-[0.98] transition-all">
                                     <div className="min-w-0 pr-4 text-left">
                                         <span className="text-[9px] font-black text-emerald-600 uppercase bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">{String(e.team || 'S/ Equipe')}</span>
-                                        <h3 className="font-bold text-slate-800 text-sm truncate mt-2 uppercase leading-tight">{String(e.doctorName || '')}</h3>
+                                        <h3 className="font-bold text-slate-800 text-sm truncate mt-2 uppercase leading-tight">{String(e.pdvName || '')}</h3>
                                         <p className="text-[11px] text-slate-500 font-bold uppercase truncate opacity-70 mt-0.5">{String(e.requesterName || '')} • {String(e.actionType || '')}</p>
                                     </div>
                                     <div className="text-right shrink-0 flex flex-col items-end">
