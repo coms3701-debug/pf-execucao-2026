@@ -61,7 +61,7 @@ const ADMIN_USERS = {
 };
 
 // =========================================================================
-// VALIDADOR E FORMATADOR DE CNPJ (NOVO)
+// VALIDADOR E FORMATADOR DE CNPJ
 // =========================================================================
 const formatCNPJ = (value) => {
     return value
@@ -77,7 +77,7 @@ const isValidCNPJ = (cnpj) => {
     cnpj = cnpj.replace(/[^\d]+/g,'');
     if(cnpj === '') return false;
     if (cnpj.length !== 14) return false;
-    if (/^(\d)\1+$/.test(cnpj)) return false; // Ex: 00000000000000
+    if (/^(\d)\1+$/.test(cnpj)) return false; 
 
     let tamanho = cnpj.length - 2
     let numeros = cnpj.substring(0,tamanho);
@@ -310,7 +310,8 @@ export default function App() {
                 ctx.font = 'italic bold 550px serif';
                 ctx.textAlign = 'center'; 
                 ctx.textBaseline = 'middle';
-                ctx.fillText('PF', 512, 512 + 40);
+                // ALTERADO AQUI PARA EX:
+                ctx.fillText('EX', 512, 512 + 40);
                 const iconUrl = canvas.toDataURL('image/png');
                 
                 let link = document.querySelector('link[rel="apple-touch-icon"]');
@@ -342,7 +343,6 @@ export default function App() {
             t = localStorage.getItem('pf_user_team') || '';
             r = localStorage.getItem('pf_user_name') || '';
         } catch(e) {}
-        // Alterado de doctorName e crm para pdvName e cnpj
         return { team: t, requesterName: r, pdvName: '', cnpj: '', category: '', actionType: '', value: '', observations: '' };
     });
 
@@ -462,7 +462,6 @@ export default function App() {
             const dataToExport = currentAdmin ? filteredEntriesAdmin : feedEntries;
             if (dataToExport.length === 0) return notify("Não existem dados para exportar.", "error");
 
-            // Atualizados Cabeçalhos no Relatório
             const headers = ["Data", "Estrutura", "Solicitante", "PDV/Destinatario", "CNPJ", "Bandeira", "Acao", "Valor", "Observacoes"];
             const rows = dataToExport.map(e => {
                 const date = formatDate(e.createdAt);
@@ -510,7 +509,6 @@ export default function App() {
         } catch(e) { return []; }
     }, [feedEntries, parseCurrency]);
 
-    // Atualizado para agrupar por CNPJ e mostrar Top PDVs
     const feedStatsByPdv = useMemo(() => {
         try {
             const groups = feedEntries.reduce((acc, curr) => {
@@ -564,7 +562,7 @@ export default function App() {
         } else if (name === 'value') {
             setFormData(prev => ({ ...prev, [name]: formatValueInput(value) }));
         } else if (name === 'cnpj') {
-            setFormData(prev => ({ ...prev, [name]: formatCNPJ(value) })); // Aplica a Máscara CNPJ
+            setFormData(prev => ({ ...prev, [name]: formatCNPJ(value) }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
@@ -577,7 +575,7 @@ export default function App() {
         } else if (name === 'value') {
             setEditingEntry(prev => ({ ...prev, [name]: formatValueInput(value) }));
         } else if (name === 'cnpj') {
-            setEditingEntry(prev => ({ ...prev, [name]: formatCNPJ(value) })); // Aplica a Máscara CNPJ na Edição
+            setEditingEntry(prev => ({ ...prev, [name]: formatCNPJ(value) })); 
         } else {
             setEditingEntry(prev => ({ ...prev, [name]: value }));
         }
@@ -592,7 +590,6 @@ export default function App() {
             return alert("Preencha todos os campos obrigatórios.");
         }
         
-        // NOVO: BLOQUEIO DE CNPJ INVÁLIDO ANTES DE GRAVAR
         if (!isValidCNPJ(cnpj)) {
             return alert("O CNPJ digitado é inválido. Por favor, verifique.");
         }
@@ -615,7 +612,6 @@ export default function App() {
             return notify("Preencha todos os campos obrigatórios.", "error");
         }
 
-        // NOVO: BLOQUEIO DE CNPJ INVÁLIDO NA EDIÇÃO
         if (!isValidCNPJ(cnpj)) {
             return notify("O CNPJ digitado é inválido.", "error");
         }
@@ -678,7 +674,7 @@ export default function App() {
                     <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSuccessPopup(false)}></div>
                     <div className="relative bg-white w-full max-sm:rounded-3xl rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 border border-slate-100 text-center flex flex-col items-center">
                         <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-800 rounded-[2rem] flex items-center justify-center text-white font-serif text-5xl font-bold italic shadow-[0_10px_30px_rgba(16,185,129,0.4)] mb-6">
-                            PF
+                            EX
                         </div>
                         <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Sucesso!</h3>
                         <p className="text-sm font-bold text-slate-500 mb-8 uppercase tracking-wider leading-relaxed">
@@ -732,7 +728,6 @@ export default function App() {
                                 )}
                             </div>
 
-                            {/* MUDANÇA AQUI: PDV E CNPJ NA EDIÇÃO */}
                             <input name="pdvName" value={editingEntry.pdvName} onChange={handleEditChange} placeholder="NOME DO PDV / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
                             <div className="grid grid-cols-2 gap-4">
@@ -759,9 +754,9 @@ export default function App() {
             <header className="sticky top-0 z-50 bg-slate-900 p-5 border-b border-slate-800 shadow-xl text-white">
                 <div className="max-w-md mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center font-black italic shadow-lg text-white">PF</div>
+                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center font-black italic shadow-lg text-white">EX</div>
                         <div>
-                            <h1 className="text-base font-black tracking-tight uppercase leading-none">Pierre Fabre</h1>
+                            <h1 className="text-base font-black tracking-tight uppercase leading-none">PF Execução</h1>
                             <p className="text-[10px] text-emerald-400 font-bold tracking-[0.3em] uppercase mt-1">Corporate Brasil</p>
                         </div>
                     </div>
@@ -805,7 +800,6 @@ export default function App() {
                                 )}
                             </div>
 
-                            {/* MUDANÇA AQUI: PDV E CNPJ */}
                             <input name="pdvName" value={formData.pdvName} onChange={handleInputChange} placeholder="NOME DO PDV / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
                             <div className="grid grid-cols-2 gap-4">
@@ -814,7 +808,7 @@ export default function App() {
                                     value={formData.cnpj} 
                                     onChange={handleInputChange} 
                                     placeholder="CNPJ" 
-                                    maxLength={18} // Limite da máscara do CNPJ
+                                    maxLength={18} 
                                     className="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 transition-all placeholder:text-slate-400" 
                                 />
                                 <input name="value" value={formData.value} onChange={handleInputChange} placeholder="R$ 0,00" className="p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl font-black text-emerald-800 text-sm outline-none focus:border-emerald-500 transition-all text-center placeholder:text-emerald-400" />
@@ -915,7 +909,6 @@ export default function App() {
                                     </div>
                                 )}
 
-                                {/* MUDANÇA AQUI: Mostrar Top PDVs por CNPJ */}
                                 {feedStatsByPdv.length > 0 && (
                                     <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
                                         <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-3 border-l-2 border-indigo-500 pl-2">Top PDVs (Por CNPJ)</h3>
