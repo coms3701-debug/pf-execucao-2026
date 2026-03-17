@@ -1,6 +1,7 @@
 {
-  "name": "PF Verbas",
-  "short_name": "PF Verbas",
+  
+  "name": "PF Execução",
+  "short_name": "PF Execução",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
