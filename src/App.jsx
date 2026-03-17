@@ -21,10 +21,10 @@ const db = getFirestore(app);
 
 const COLLECTION_NAME = 'pf_budget_oficial_execucao';
 
-   const TEAMS = [
+const TEAMS = [
     "ALEXANDRA CARVALHO", "FELIPE LIMA", "LUANDA MEDEIROS", 
-    "GUSTAVO LIMA", "DIRETORIA"
-]
+    "GERENTE NACIONAL DE EXECUÇÃO", "DIRETORIA (MATRIZ)"
+];
 
 const REPRESENTATIVES = {
     "ALEXANDRA CARVALHO": [
@@ -42,22 +42,22 @@ const REPRESENTATIVES = {
         "EDRILIM SILVA", "JORDANA PEIXOTO",
         "DEBORA ZIMMERMAN", "LEONARDO SOUZA", "DAYLENE SOUSA"
     ],
-    ],
     "GERENTE NACIONAL DE EXECUÇÃO": ["GUSTAVO LIMA"],
     "DIRETORIA (MATRIZ)": ["JULIO MIELE"]
 };
 
 const ACTION_TYPES = [
-    'MATERIAL DE CONSUMO', 'PRESENTE (LIMITE R$150,00', 'REFEIÇÃO (TETO R$90,00 POR PARTICIPANTE', 'COMPRA DE BRINDES', 
+    'MATERIAL DE CONSUMO', 'PRESENTE (LIMITE R$150,00)', 'REFEIÇÃO (TETO R$90,00 POR PARTICIPANTE)', 'COMPRA DE BRINDES', 
     'GRÁFICA', 'TREINAMENTO', 'CAMPANHAS DERMO', 'AÉREO'
 ];
+
 const BANDEIRA = ['RAIA', 'DPSP', 'PAGUE MENOS', "VENÂNCIO", 'D1000'];
 
 const ADMIN_USERS = {
     "8888": { name: "JULIO MIELE", isGeneral: true, team: "DIRETORIA (MATRIZ)" },
     "1001": { name: "GESTOR RIO", isGeneral: false, team: "ALEXANDRA CARVALHO" },
     "1002": { name: "GESTOR SP", isGeneral: false, team: "FELIPE LIMA" },
-    "1003": { name: "GESTOR SP/SUL", isGeneral: false, team: "LUANDA" },
+    "1003": { name: "GESTOR SP/SUL", isGeneral: false, team: "LUANDA MEDEIROS" },
 };
 
 // =========================================================================
@@ -80,7 +80,6 @@ const TouchSelect = ({ name, value, onChange, options, placeholder }) => {
         if (!el || !isOpen) return;
 
         const handleTouchMove = (e) => {
-            // MÁGICA AQUI: Bloqueia o scroll nativo do iPhone e foca só no deslizar do dedo
             e.preventDefault(); 
             if (e.touches.length !== 1) return;
             
@@ -101,7 +100,6 @@ const TouchSelect = ({ name, value, onChange, options, placeholder }) => {
             }
         };
 
-        // { passive: false } é obrigatório no iOS para a trava (preventDefault) funcionar perfeitamente
         el.addEventListener('touchmove', handleTouchMove, { passive: false });
         return () => el.removeEventListener('touchmove', handleTouchMove);
     }, [isOpen]);
@@ -178,7 +176,6 @@ const SwipeableEntry = ({ entry, onEdit, onDelete, currentAdmin, adminGeneralFil
         const diffX = e.touches[0].clientX - startX;
         const diffY = e.touches[0].clientY - startY;
         
-        // Bloqueia o swipe horizontal se estivermos a fazer scroll na vertical
         if (Math.abs(diffY) > Math.abs(diffX)) return;
         
         if (diffX > 120) setOffsetX(120);
@@ -188,19 +185,18 @@ const SwipeableEntry = ({ entry, onEdit, onDelete, currentAdmin, adminGeneralFil
     
     const handleEnd = () => {
         if (offsetX > 70) {
-            onEdit(entry); // Swipe Direita (Editar)
+            onEdit(entry); 
             if (navigator.vibrate) navigator.vibrate(20);
         }
         else if (offsetX < -70) {
-            onDelete(entry); // Swipe Esquerda (Excluir)
+            onDelete(entry); 
             if (navigator.vibrate) navigator.vibrate(20);
         }
-        setOffsetX(0); // Volta à posição original
+        setOffsetX(0); 
     };
 
     return (
         <div className="relative rounded-2xl overflow-hidden mb-3 bg-slate-200 border border-slate-200">
-            {/* Ações de Fundo */}
             <div className="absolute inset-0 flex justify-between items-center px-5">
                 <div className={`font-black flex items-center gap-2 transition-opacity duration-200 ${offsetX > 0 ? 'opacity-100 text-emerald-600' : 'opacity-0'}`}>
                     <span className="text-2xl">✏️</span> EDITAR
@@ -210,7 +206,6 @@ const SwipeableEntry = ({ entry, onEdit, onDelete, currentAdmin, adminGeneralFil
                 </div>
             </div>
 
-            {/* Cartão de Superfície */}
             <div 
                 onTouchStart={handleStart}
                 onTouchMove={handleMove}
@@ -234,9 +229,8 @@ const SwipeableEntry = ({ entry, onEdit, onDelete, currentAdmin, adminGeneralFil
     );
 };
 
-
 // =========================================================================
-// APLICATIVO PRINCIPAL
+// APLICATIVO PRINCIPAL (APP)
 // =========================================================================
 export default function App() {
     const [user, setUser] = useState(null);
@@ -246,19 +240,15 @@ export default function App() {
     const [status, setStatus] = useState({ type: '', msg: '' });
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     
-    // Admin States
     const [currentAdmin, setCurrentAdmin] = useState(null);
     const [pinInput, setPinInput] = useState('');
     const [adminTab, setAdminTab] = useState('reports'); 
     const [adminGeneralFilter, setAdminGeneralFilter] = useState('ALL');
     
-    // Edição e Exclusão
     const [deleteTarget, setDeleteTarget] = useState(null);
-    const [editingEntry, setEditingEntry] = useState(null); // Estado para edição
+    const [editingEntry, setEditingEntry] = useState(null); 
 
-    // =========================================================================
     // ÍCONE DINÂMICO PWA (IPHONE)
-    // =========================================================================
     useEffect(() => {
         try {
             const canvas = document.createElement('canvas');
@@ -266,8 +256,8 @@ export default function App() {
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
-                grad.addColorStop(0, '#059669'); // emerald-600
-                grad.addColorStop(1, '#10b981'); // emerald-500
+                grad.addColorStop(0, '#059669'); 
+                grad.addColorStop(1, '#10b981'); 
                 ctx.fillStyle = grad;
                 ctx.beginPath(); 
                 ctx.roundRect(0, 0, 1024, 1024, 200); 
@@ -354,7 +344,6 @@ export default function App() {
         return () => unsubscribe();
     }, [user]);
 
-    // CÁLCULOS E FILTROS
     const parseCurrency = useCallback((valStr) => {
         if (!valStr) return 0;
         return parseFloat(String(valStr).replace(/\./g, '').replace(',', '.')) || 0;
@@ -429,7 +418,7 @@ export default function App() {
             const dataToExport = currentAdmin ? filteredEntriesAdmin : feedEntries;
             if (dataToExport.length === 0) return notify("Não existem dados para exportar.", "error");
 
-            const headers = ["Data", "Estrutura", "Solicitante", "Medico/Destinatario", "CRM", "Categoria", "Acao", "Valor", "Observacoes"];
+            const headers = ["Data", "Estrutura", "Solicitante", "Medico/Destinatario", "CRM", "Bandeira", "Acao", "Valor", "Observacoes"];
             const rows = dataToExport.map(e => {
                 const date = formatDate(e.createdAt);
                 const obs = String(e.observations || "").replace(/"/g, '""').replace(/\n/g, ' '); 
@@ -450,7 +439,6 @@ export default function App() {
         } catch (err) { notify("Falha ao exportar", "error"); }
     };
 
-    // RANKINGS
     const feedStatsByRep = useMemo(() => {
         try {
             const groups = feedEntries.reduce((acc, curr) => {
@@ -523,7 +511,6 @@ export default function App() {
         } catch(e) { return []; }
     }, [filteredEntriesAdmin, parseCurrency]);
 
-    // EVENTOS
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         if (name === 'team') {
@@ -558,7 +545,7 @@ export default function App() {
             await addDoc(collection(db, COLLECTION_NAME), { ...formData, userId: user.uid, createdAt: new Date() });
             setFormData({ ...formData, doctorName: '', crm: '', value: '', observations: '', category: '', actionType: '' }); 
             
-            if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 30]); // Vibração de Sucesso dupla
+            if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 30]); 
             setShowSuccessPopup(true);
             setTimeout(() => { setShowSuccessPopup(false); }, 3500); 
             setView('history');
@@ -624,7 +611,6 @@ export default function App() {
     return (
         <div className="min-h-screen bg-slate-100 pb-24 text-slate-900 font-sans">
             
-            {/* POP-UP DE SUCESSO */}
             {showSuccessPopup && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 animate-in fade-in duration-300">
                     <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSuccessPopup(false)}></div>
@@ -643,7 +629,6 @@ export default function App() {
                 </div>
             )}
 
-            {/* MODAL DE EXCLUSÃO */}
             {deleteTarget && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeleteTarget(null)}></div>
@@ -659,7 +644,6 @@ export default function App() {
                 </div>
             )}
 
-            {/* MODAL DE EDIÇÃO COMPLETA (AO ARRASTAR PARA A DIREITA) */}
             {editingEntry && (
                 <div className="fixed inset-0 z-[105] flex items-end justify-center bg-slate-900/80 backdrop-blur-sm" onClick={() => setEditingEntry(null)}>
                     <div 
@@ -694,7 +678,7 @@ export default function App() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <TouchSelect name="category" value={editingEntry.category} onChange={handleEditChange} options={CATEGORIES} placeholder="CATEGORIA" />
+                                <TouchSelect name="category" value={editingEntry.category} onChange={handleEditChange} options={BANDEIRA} placeholder="BANDEIRA" />
                                 <TouchSelect name="actionType" value={editingEntry.actionType} onChange={handleEditChange} options={ACTION_TYPES} placeholder="AÇÃO" />
                             </div>
 
@@ -731,7 +715,6 @@ export default function App() {
             )}
 
             <main className="max-w-md mx-auto p-4">
-                {/* ======================= ABA NOVO ======================= */}
                 {view === 'form' && (
                     <div className="bg-white rounded-[2rem] p-7 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95">
                         <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-7 flex items-center gap-2">
@@ -773,7 +756,8 @@ export default function App() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <TouchSelect name="category" value={formData.category} onChange={handleInputChange} options={CATEGORIES} placeholder="CATEGORIA..." />
+                                {/* Aqui o formulário chama a nova lista BANDEIRA em vez da antiga CATEGORIES */}
+                                <TouchSelect name="category" value={formData.category} onChange={handleInputChange} options={BANDEIRA} placeholder="BANDEIRA..." />
                                 <TouchSelect name="actionType" value={formData.actionType} onChange={handleInputChange} options={ACTION_TYPES} placeholder="AÇÃO..." />
                             </div>
 
@@ -786,7 +770,6 @@ export default function App() {
                     </div>
                 )}
 
-                {/* ======================= ABA FEED ======================= */}
                 {view === 'history' && (
                     <div className="space-y-5 animate-in slide-in-from-bottom-4 duration-500 pb-10">
                         
@@ -915,13 +898,6 @@ export default function App() {
                                     <div className="text-right shrink-0 flex flex-col items-end">
                                         <p className="font-black text-slate-900 text-sm uppercase tracking-tighter">R$ {String(e.value || '0,00')}</p>
                                         <p className="text-[10px] text-slate-400 font-bold mt-1">{formatDate(e.createdAt)}</p>
-                                        
-                                        {/* Botão de excluir tradicional se necessário */}
-                                        {!currentAdmin && e.userId === user?.uid && (
-                                            <button onClick={() => setDeleteTarget(e)} className="mt-3 bg-rose-50 text-rose-600 font-bold py-1 px-2 rounded text-[10px] uppercase active:scale-90 transition-all border border-rose-100">
-                                                Excluir
-                                            </button>
-                                        )}
                                     </div>
                                 </div>
                             ))
@@ -929,7 +905,6 @@ export default function App() {
                     </div>
                 )}
 
-                {/* ======================= ABA GESTOR (COM O NOVO DESLIZAR) ======================= */}
                 {view === 'admin' && (
                     <div className="animate-in fade-in duration-500">
                         {!currentAdmin ? (
@@ -972,7 +947,6 @@ export default function App() {
                                             <div className="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-200 text-center uppercase"><p className="text-[10px] font-black text-slate-400 mb-2 tracking-widest leading-none">Total Lançamentos</p><h4 className="text-3xl font-black text-slate-800 leading-none">{countEntriesAdmin}</h4></div>
                                         </div>
 
-                                        {/* RANKING: TOTAL POR DISTRITAL (EXCLUSIVO ADMIN GERAL) */}
                                         {currentAdmin.isGeneral && (
                                             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
                                                 <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">Total por Distrital</h3>
@@ -1005,7 +979,6 @@ export default function App() {
                                             </div>
                                         </div>
                                         
-                                        {/* AQUI ENTRA A LISTA COM OS NOVOS CARTÕES DESLIZANTES */}
                                         {filteredEntriesAdmin.map(e => (
                                             <SwipeableEntry 
                                                 key={e.id} 
