@@ -54,7 +54,7 @@ const ACTION_TYPES = [
 const BANDEIRA = ['RAIA', 'DPSP', 'PAGUE MENOS', "VENÂNCIO", 'D1000'];
 
 const ADMIN_USERS = {
-    "8888": { name: "JULIO MIELE", isGeneral: true, team: "DIRETORIA (MATRIZ)" },
+    "8888": { name: "GUSTAVO LIMA", isGeneral: true, team: "DIRETORIA (MATRIZ)" },
     "1001": { name: "GESTOR RIO", isGeneral: false, team: "ALEXANDRA CARVALHO" },
     "1002": { name: "GESTOR SP", isGeneral: false, team: "FELIPE LIMA" },
     "1003": { name: "GESTOR SP/SUL", isGeneral: false, team: "LUANDA MEDEIROS" },
