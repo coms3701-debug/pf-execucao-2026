@@ -343,7 +343,7 @@ export default function App() {
             t = localStorage.getItem('pf_user_team') || '';
             r = localStorage.getItem('pf_user_name') || '';
         } catch(e) {}
-        return { team: t, requesterName: r, pdvName: '', cnpj: '', category: '', actionType: '', value: '', observations: '' };
+        return { team: t, requesterName: r, pdvName: '', requestDate: '', cnpj: '', category: '', actionType: '', value: '', observations: '' };
     });
 
     useEffect(() => {
@@ -585,8 +585,8 @@ export default function App() {
         e.preventDefault();
         if (!user) return alert("Aguarde a ligação ao servidor");
         
-        const { team, requesterName, pdvName, value, observations, cnpj, category, actionType } = formData;
-        if (!team || !requesterName || !pdvName || !value || !cnpj || !category || !actionType) {
+        const { team, requesterName, pdvName, requestDate, value, observations, cnpj, category, actionType } = formData;
+        if (!team || !requesterName || !pdvName || !requestDate || !value || !cnpj || !category || !actionType) {
             return alert("Preencha todos os campos obrigatórios.");
         }
         
@@ -596,7 +596,7 @@ export default function App() {
 
         try {
             await addDoc(collection(db, COLLECTION_NAME), { ...formData, userId: user.uid, createdAt: new Date() });
-            setFormData({ ...formData, pdvName: '', cnpj: '', value: '', observations: '', category: '', actionType: '' }); 
+            setFormData({ ...formData, pdvName: '', requestDate: '', cnpj: '', value: '', observations: '', category: '', actionType: '' }); 
             
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 30]); 
             setShowSuccessPopup(true);
@@ -607,8 +607,8 @@ export default function App() {
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
-        const { team, requesterName, pdvName, value, cnpj, category, actionType } = editingEntry;
-        if (!team || !requesterName || !pdvName || !value || !cnpj || !category || !actionType) {
+        const { team, requesterName, pdvName, requestDate, value, cnpj, category, actionType } = editingEntry;
+        if (!team || !requesterName || !pdvName || !requestDate || !value || !cnpj || !category || !actionType) {
             return notify("Preencha todos os campos obrigatórios.", "error");
         }
 
@@ -618,7 +618,7 @@ export default function App() {
 
         try {
             await updateDoc(doc(db, COLLECTION_NAME, editingEntry.id), {
-                team, requesterName, pdvName, value, cnpj, category, actionType, observations: editingEntry.observations || ''
+                team, requesterName, pdvName, requestDate, value, cnpj, category, actionType, observations: editingEntry.observations || ''
             });
             setEditingEntry(null);
             if (navigator.vibrate) navigator.vibrate([30, 50, 30]); 
@@ -730,6 +730,11 @@ export default function App() {
 
                             <input name="pdvName" value={editingEntry.pdvName} onChange={handleEditChange} placeholder="NOME DO PDV / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-widest italic">Data da Solicitação</label>
+                                <input type="date" name="requestDate" value={editingEntry.requestDate || ''} onChange={handleEditChange} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 text-slate-600 transition-all" />
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <input name="cnpj" value={editingEntry.cnpj} onChange={handleEditChange} placeholder="CNPJ" maxLength={18} className="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 transition-all placeholder:text-slate-400" />
                                 <input name="value" value={editingEntry.value} onChange={handleEditChange} placeholder="R$ 0,00" className="p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl font-black text-emerald-800 text-sm outline-none focus:border-emerald-500 transition-all text-center placeholder:text-emerald-400" />
@@ -802,6 +807,11 @@ export default function App() {
 
                             <input name="pdvName" value={formData.pdvName} onChange={handleInputChange} placeholder="NOME DO PDV / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-widest italic">Data da Solicitação</label>
+                                <input type="date" name="requestDate" value={formData.requestDate} onChange={handleInputChange} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 text-slate-600 transition-all" />
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <input 
                                     name="cnpj"
@@ -901,7 +911,7 @@ export default function App() {
                                         <div className="space-y-2 max-h-32 overflow-y-auto pr-2">
                                             {feedStatsByAction.map((s, i) => (
                                                 <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 pb-1.5 last:border-0">
-                                                <span className="font-bold text-slate-600 truncate pr-2 uppercase">{i+1}. {s.name}</span>
+                                                    <span className="font-bold text-slate-600 truncate pr-2 uppercase">{i+1}. {s.name}</span>
                                                     <span className="font-black text-sky-600 shrink-0">R$ {Number(s.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                                 </div>
                                             ))}
