@@ -51,7 +51,23 @@ const ACTION_TYPES = [
     'GRÁFICA', 'TREINAMENTO', 'CAMPANHAS DERMO', 'AÉREO'
 ];
 
-const BANDEIRA = ['RAIA', 'DPSP', 'PAGUE MENOS', "VENÂNCIO", 'D1000'];
+const BANDEIRA = [
+    "A NOSSA DROGARIA", "CELIDONIO E OLIVO FARMACIA", "CITYFARMA", "CITYFARMA PRAIA DA BARRA", 
+    "CLARO VIDA DROGARIAS", "COOP REDE", "DROGAL", "DROGA LIDER", "DROGAO SUPER", "DROGARIA ARAUJO", 
+    "DROGARIA BONAVIDA", "DROGARIA CARREFOUR", "DROGARIA CATARINENSE", "DROGARIA CATEDRAL", 
+    "DROGARIA CRISTAL", "DROGARIA IGUATEMI", "DROGARIA NISSEI", "DROGARIA NOVA ESPERANCA", 
+    "DROGARIA PACHECO", "DROGARIA PLUS CAMPINEIRA", "DROGARIA PLUS FLAMBOYANT", "DROGARIA RETIRO", 
+    "DROGARIA ROSARIO", "DROGARIA SANTA MARIA", "DROGARIA SAO PAULO", "DROGARIA SOARES 2", 
+    "DROGARIA TAMOIO", "DROGARIA VENANCIO", "DROGARIAS CRISTAL", "DROGARIAS MAXI POPULAR", 
+    "DROGARIAS NISSEI", "DROGARIAS NOVA FARMA", "DROGARIAS POVAO", "DROGASIL", "DROGASMIL", 
+    "FARMACIA ADICAO", "FARMACIA E DRUGSTORE INDIANA", "FARMACIA EXTRAFARMA", "FARMACIA LIDER", 
+    "FARMACIA MODELO.", "FARMACIA PERMANENTE", "FARMACIA PRECO POPULAR", "FARMACIA UNIMED", 
+    "FARMACIAS INDEPENDENTE", "FARMACIAS PAGUE MENOS", "FARMALIFE", "FARMASHOP", "FCIA BOTICA OFICINAL", 
+    "FORMOSA FARMA", "LIDER 14 DE MARCO", "LIDER ABAETETUBA", "LIDER CASTANHAL II", "LIDER DUQUE", 
+    "LIDER GUAMA", "LIDER MARAMBAIA", "LIDER SAO FRANCISCO", "MAFRA RIBEIRAO PRETO", "PANVEL FARMACIAS", 
+    "RAIA", "RD PHARMA", "REDE DROGA LESTE", "REDEPHARMA", "SAO JOAO FARMACIAS", "SOUZA DRUG STORE", 
+    "TRADICAO MEDICAMENTOS"
+];
 
 const ADMIN_USERS = {
     "8888": { name: "GUSTAVO LIMA", isGeneral: true, team: "DIRETORIA (MATRIZ)" },
@@ -586,11 +602,11 @@ export default function App() {
         if (!user) return alert("Aguarde a ligação ao servidor");
         
         const { team, requesterName, pdvName, requestDate, value, observations, cnpj, category, actionType } = formData;
-        if (!team || !requesterName || !pdvName || !requestDate || !value || !cnpj || !category || !actionType) {
+        if (!team || !requesterName || !pdvName || !requestDate || !value || !category || !actionType) {
             return alert("Preencha todos os campos obrigatórios.");
         }
         
-        if (!isValidCNPJ(cnpj)) {
+        if (cnpj && !isValidCNPJ(cnpj)) {
             return alert("O CNPJ digitado é inválido. Por favor, verifique.");
         }
 
@@ -608,11 +624,11 @@ export default function App() {
     const handleEditSubmit = async (e) => {
         e.preventDefault();
         const { team, requesterName, pdvName, requestDate, value, cnpj, category, actionType } = editingEntry;
-        if (!team || !requesterName || !pdvName || !requestDate || !value || !cnpj || !category || !actionType) {
+        if (!team || !requesterName || !pdvName || !requestDate || !value || !category || !actionType) {
             return notify("Preencha todos os campos obrigatórios.", "error");
         }
 
-        if (!isValidCNPJ(cnpj)) {
+        if (cnpj && !isValidCNPJ(cnpj)) {
             return notify("O CNPJ digitado é inválido.", "error");
         }
 
@@ -728,7 +744,7 @@ export default function App() {
                                 )}
                             </div>
 
-                            <input name="pdvName" value={editingEntry.pdvName} onChange={handleEditChange} placeholder="NOME DO PDV / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
+                            <input name="pdvName" value={editingEntry.pdvName} onChange={handleEditChange} placeholder="NOME DO PDV / DESTINATÁRIO / AÇÃO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-widest italic">Data da Solicitação</label>
@@ -736,7 +752,7 @@ export default function App() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <input name="cnpj" value={editingEntry.cnpj} onChange={handleEditChange} placeholder="CNPJ" maxLength={18} className="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 transition-all placeholder:text-slate-400" />
+                                <input name="cnpj" value={editingEntry.cnpj} onChange={handleEditChange} placeholder="CNPJ (OPCIONAL)" maxLength={18} className="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 transition-all placeholder:text-slate-400" />
                                 <input name="value" value={editingEntry.value} onChange={handleEditChange} placeholder="R$ 0,00" className="p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl font-black text-emerald-800 text-sm outline-none focus:border-emerald-500 transition-all text-center placeholder:text-emerald-400" />
                             </div>
 
@@ -761,7 +777,9 @@ export default function App() {
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center font-black italic shadow-lg text-white">EX</div>
                         <div>
-                            <h1 className="text-base font-black tracking-tight uppercase leading-none">PF Execução</h1>
+                            <h1 className="text-base font-black tracking-tight uppercase leading-none">
+                                PF Execução <span className="text-[10px] text-emerald-400 font-bold tracking-[0.3em] uppercase ml-2">v2.0.0</span>
+                            </h1>
                             <p className="text-[10px] text-emerald-400 font-bold tracking-[0.3em] uppercase mt-1">Corporate Brasil</p>
                         </div>
                     </div>
@@ -805,7 +823,7 @@ export default function App() {
                                 )}
                             </div>
 
-                            <input name="pdvName" value={formData.pdvName} onChange={handleInputChange} placeholder="NOME DO PDV / DESTINATÁRIO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
+                            <input name="pdvName" value={formData.pdvName} onChange={handleInputChange} placeholder="NOME DO PDV / DESTINATÁRIO / AÇÃO" className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 transition-all uppercase placeholder:text-slate-400" />
                             
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-widest italic">Data da Solicitação</label>
@@ -817,7 +835,7 @@ export default function App() {
                                     name="cnpj"
                                     value={formData.cnpj} 
                                     onChange={handleInputChange} 
-                                    placeholder="CNPJ" 
+                                    placeholder="CNPJ (OPCIONAL)" 
                                     maxLength={18} 
                                     className="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none uppercase focus:border-emerald-500 transition-all placeholder:text-slate-400" 
                                 />
