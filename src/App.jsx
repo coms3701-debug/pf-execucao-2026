@@ -122,96 +122,78 @@ const isValidCNPJ = (cnpj) => {
 };
 
 // =========================================================================
-// COMPONENTE: TOUCH SELECT
+// COMPONENTE: TOUCH SELECT (ATUALIZADO PARA LISTAS LONGAS E BUSCA)
 // =========================================================================
 const TouchSelect = ({ name, value, onChange, options, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [highlight, setHighlight] = useState(-1);
-    const highlightRef = useRef(-1);
-    const containerRef = useRef(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const isSearchable = options.length > 10;
 
     useEffect(() => {
-        if (isOpen) document.body.style.overflow = 'hidden';
-        else document.body.style.overflow = 'unset';
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            setSearchTerm('');
+        } else {
+            document.body.style.overflow = 'unset';
+        }
         return () => { document.body.style.overflow = 'unset'; };
     }, [isOpen]);
 
-    useEffect(() => {
-        const el = containerRef.current;
-        if (!el || !isOpen) return;
+    const filteredOptions = options.filter(opt =>
+        opt.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-        const handleTouchMove = (e) => {
-            e.preventDefault(); 
-            if (e.touches.length !== 1) return;
-            
-            const touch = e.touches[0];
-            const elem = document.elementFromPoint(touch.clientX, touch.clientY);
-            const optionElem = elem?.closest('[data-index]');
-            
-            if (optionElem && optionElem.dataset && optionElem.dataset.index !== undefined) {
-                const idx = Number(optionElem.dataset.index);
-                if (idx !== highlightRef.current) {
-                    setHighlight(idx);
-                    highlightRef.current = idx;
-                    try { if (navigator.vibrate) navigator.vibrate(15); } catch(e){}
-                }
-            } else {
-                setHighlight(-1);
-                highlightRef.current = -1;
-            }
-        };
-
-        el.addEventListener('touchmove', handleTouchMove, { passive: false });
-        return () => el.removeEventListener('touchmove', handleTouchMove);
-    }, [isOpen]);
-
-    const handleEnd = () => {
-        if (highlightRef.current >= 0 && options[highlightRef.current]) {
-            onChange({ target: { name, value: options[highlightRef.current] } });
-            try { if (navigator.vibrate) navigator.vibrate([30, 50, 30]); } catch(e){}
-        }
+    const handleSelect = (opt) => {
+        onChange({ target: { name, value: opt } });
+        try { if (navigator.vibrate) navigator.vibrate([30, 50, 30]); } catch(e){}
         setIsOpen(false);
-        setHighlight(-1);
-        highlightRef.current = -1;
     };
 
     return (
         <>
             <div onClick={() => setIsOpen(true)} className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none transition-all active:scale-[0.98] active:shadow-inner flex justify-between items-center cursor-pointer">
-                <span className={value ? "text-slate-800 uppercase" : "text-[10px] text-slate-400 uppercase"}>{value || placeholder}</span>
-                <span className="text-slate-400 text-[10px]">▼</span>
+                <span className={value ? "text-slate-800 uppercase truncate pr-2" : "text-[10px] text-slate-400 uppercase"}>{value || placeholder}</span>
+                <span className="text-slate-400 text-[10px] shrink-0">▼</span>
             </div>
 
             {isOpen && (
-                <div className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
+                <div className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setIsOpen(false)}>
                     <div 
-                        className="w-full max-w-md bg-white rounded-t-[2.5rem] p-5 pb-8 shadow-2xl flex flex-col max-h-[90vh]"
+                        className="w-full max-w-md bg-white rounded-t-[2.5rem] p-5 pb-8 shadow-2xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-full duration-200"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 shrink-0"></div>
-                        <p className="text-[10px] font-black text-slate-400 mb-3 uppercase text-center tracking-widest shrink-0">Deslize o dedo sem soltar</p>
+                        <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-5 shrink-0"></div>
                         
-                        <div 
-                            ref={containerRef}
-                            className="space-y-1 relative"
-                            onTouchEnd={handleEnd}
-                            onTouchCancel={handleEnd}
-                        >
-                            {options.map((opt, i) => (
-                                <div 
-                                    key={opt} 
-                                    data-index={i}
-                                    onTouchStart={() => { 
-                                        setHighlight(i); 
-                                        highlightRef.current = i;
-                                        try{ if (navigator.vibrate) navigator.vibrate(15); }catch(e){} 
-                                    }}
-                                    onClick={() => { onChange({ target: { name, value: opt }}); setIsOpen(false); }}
-                                    className={`p-3 rounded-xl transition-all duration-75 cursor-pointer border flex items-center ${value === opt || highlight === i ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40 scale-[1.02] border-emerald-400 z-10 relative' : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'}`}
-                                >
-                                    <span className="text-xs font-bold uppercase pointer-events-none">{opt}</span>
-                                </div>
-                            ))}
+                        {isSearchable ? (
+                            <div className="mb-4 relative shrink-0">
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    placeholder="BUSCAR CLIENTE/NOME..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full p-4 pl-12 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-bold uppercase outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400"
+                                />
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">🔍</span>
+                            </div>
+                        ) : (
+                            <p className="text-[10px] font-black text-slate-400 mb-4 uppercase text-center tracking-widest shrink-0">Selecione uma opção</p>
+                        )}
+                        
+                        <div className="space-y-1.5 overflow-y-auto flex-1 overscroll-contain pb-4 scroll-smooth">
+                            {filteredOptions.length === 0 ? (
+                                <p className="text-center text-slate-400 text-xs font-bold py-6 uppercase tracking-wider">NENHUM RESULTADO ENCONTRADO</p>
+                            ) : (
+                                filteredOptions.map((opt) => (
+                                    <div 
+                                        key={opt} 
+                                        onClick={() => handleSelect(opt)}
+                                        className={`p-4 rounded-2xl transition-all duration-75 cursor-pointer border flex items-center ${value === opt ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40 border-emerald-400' : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100 active:scale-[0.98]'}`}
+                                    >
+                                        <span className="text-xs font-bold uppercase">{opt}</span>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
@@ -778,7 +760,7 @@ export default function App() {
                         <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center font-black italic shadow-lg text-white">EX</div>
                         <div>
                             <h1 className="text-base font-black tracking-tight uppercase leading-none">
-                                PF Execução <span className="text-[10px] text-emerald-400 font-bold tracking-[0.3em] uppercase ml-2">v2.0.0</span>
+                                PF Execução <span className="text-[10px] text-emerald-400 font-bold tracking-[0.3em] uppercase ml-2">v2.1.0</span>
                             </h1>
                             <p className="text-[10px] text-emerald-400 font-bold tracking-[0.3em] uppercase mt-1">Corporate Brasil</p>
                         </div>
